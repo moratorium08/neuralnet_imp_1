@@ -25,8 +25,6 @@ with codecs.open("tweets", "r") as f:
             vocab[word] = len(vocab)
         dataset.append(vocab[word])
 
-for x in vocab:
-    print(x)
 print("vocaburary size:", len(vocab))
 print("dataset size:", len(dataset))
 
