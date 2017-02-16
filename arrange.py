@@ -1,6 +1,7 @@
 # coding:utf-8
 from MeCab import Tagger
 import codecs
+import pickle
 
 tagger = Tagger("-Ochasen")
 
@@ -30,3 +31,5 @@ print("dataset size:", len(dataset))
 
 with open("dataset", "w") as f:
     f.write(','.join(map(str, dataset)))
+with open("vocaburary", "wb") as f:
+    pickle.dump(vocab, f)
