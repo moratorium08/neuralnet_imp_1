@@ -42,63 +42,55 @@ def load_dataset():
         dataset = [int(x) for x in dataset]
         vocab = pickle.load(f2)
         l = np.array(dataset, np.int32)
-        inv_vocab={}
+        inv_vocab = {}
         for x in vocab:
             inv_vocab[vocab[x]] = x
     return l[:40000], l[40000:50000], l[50000:], vocab, inv_vocab
 
-train, test, valid, vocab, inb_vocab = load_dataset()
 
-rnn = RNN(len(vocab), rnn_size)
-model = L.Classifier(rnn)
+def main():
+    train, test, valid, vocab, inb_vocab = load_dataset()
 
-if GPU_FLAG:
-    cuda.init()
-    model.to_gpu()
+    rnn = RNN(len(vocab), rnn_size)
+    model = L.Classifier(rnn)
 
-optimizer = optimizers.Adam()
-optimizer.setup(model)
+    if GPU_FLAG:
+        cuda.init()
+        model.to_gpu()
 
-# TrainerとUpdaterで代替可能だが
-# 自分で実装してみた
-t_size = len(train) - 1  # 最後のtrain分あぶないので
-for e in range(epoch):
-    print("{0}/{1}".format(e, epoch))
-    loss = 0
-    count = 0
-    for i in range(t_size // batch_size):
-        fd = i*batch_size
-        bk = (i+1)*batch_size
-        x_batch = train[fd:bk]
-        y_batch = train[fd+1:bk+1]
+    optimizer = optimizers.Adam()
+    optimizer.setup(model)
 
-        if GPU_FLAG:
-            x_batch = cuda.to_gpu(x_batch)
-            y_batch = cuda.to_gpu(y_batch)
-        loss += model(x_batch, y_batch)
-        count += 1
-        # 途中で計算して捨てる
-        if count % 10 == 0 or count == t_size//batch_size:
-            print("truncate", loss.data)
-            model.cleargrads()
-            loss.backward()
-            loss.unchain_backward()
-            optimizer.update()
-            loss = 0
+    # TrainerとUpdaterで代替可能だが
+    # 自分で実装してみた
+    t_size = len(train) - 1  # 最後のtrain分あぶないので
+    for e in range(epoch):
+        print("{0}/{1}".format(e, epoch))
+        loss = 0
+        count = 0
+        for i in range(t_size // batch_size):
+            fd = i*batch_size
+            bk = (i+1)*batch_size
+            x_batch = train[fd:bk]
+            y_batch = train[fd+1:bk+1]
 
-serializers.save_hdf5("mymodel.h5", model)
-#serializers.load_hdf5("mymodel.h5", model)
+            if GPU_FLAG:
+                x_batch = cuda.to_gpu(x_batch)
+                y_batch = cuda.to_gpu(y_batch)
+            loss += model(x_batch, y_batch)
+            count += 1
+            # 途中で計算して捨てる
+            if count % 10 == 0 or count == t_size//batch_size:
+                print("truncate", loss.data)
+                model.cleargrads()
+                loss.backward()
+                loss.unchain_backward()
+                optimizer.update()
+                loss = 0
 
-rnn.train = False
-rnn.reset_state()
-nxt = vocab["自己"]
-nxt = 2000
-while True:
-    rnn.reset_state()
-    nxt = int(input())
-    for i in range(10):
-        nxt = np.array([nxt], np.int32)
-        prob = F.softmax(model.predictor(nxt))
-        print(prob.data)
-        nxt = np.argmax(prob.data)
-        print(nxt)
+    serializers.save_hdf5("mymodel.h5", model)
+    #serializers.load_hdf5("mymodel.h5", model)
+
+if __name__ == '__main__':
+    main()
+
