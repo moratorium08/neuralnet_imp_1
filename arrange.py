@@ -22,6 +22,8 @@ with codecs.open("tweets", "r") as f:
     vocab = {}
     dataset = []
     for i, word in enumerate(words):
+        if i == 0:
+            continue
         if word not in vocab:
             vocab[word] = len(vocab)
         dataset.append(vocab[word])
