@@ -9,6 +9,7 @@ words = []
 
 with codecs.open("tweets", "r") as f:
     tweets = f.read().replace("\n", "。")
+    tagger.parseToNode("")
     result = tagger.parseToNode(tweets)
     while result:
         # 眠いから、根本解決諦めた
